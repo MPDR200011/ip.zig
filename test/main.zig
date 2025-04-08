@@ -3,9 +3,13 @@ const mem = std.mem;
 const fmt = std.fmt;
 const testing = std.testing;
 
-use @import("ip");
+const ipLib = @import("ip");
+const IpAddress = ipLib.IpAddress;
+const IpV4Address = ipLib.IpV4Address;
+const IpV6Address = ipLib.IpV6Address;
+const ParseError = ipLib.ParseError;
 
-test "" {
+test {
     _ = @import("./ipv4.zig");
     _ = @import("./ipv6.zig");
 }

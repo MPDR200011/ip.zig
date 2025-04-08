@@ -3,7 +3,11 @@ const mem = std.mem;
 const fmt = std.fmt;
 const testing = std.testing;
 
-use @import("ip");
+const ipLib = @import("ip");
+const IpV4Address = ipLib.IpV4Address;
+const IpV6Address = ipLib.IpV6Address;
+const Ipv6MulticastScope = ipLib.IpV6MulticastScope;
+const ParseError = ipLib.ParseError;
 
 test "IpV6Address.segments()" {
     testing.expectEqual([8]u16{ 0, 0, 0, 0, 0, 0xffff, 0xc00a, 0x2ff }, IpV6Address.init(0, 0, 0, 0, 0, 0xffff, 0xc00a, 0x2ff).segments());

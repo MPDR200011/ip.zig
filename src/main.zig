@@ -83,13 +83,15 @@ pub const IpV4Address = struct {
                 '0'...'9' => {
                     any_digits = true;
 
-                    const digit = b - '0';
+                    const digit: u16 = b - '0';
 
-                    if (@mulWithOverflow(u8, octs[octets_index], 10, &octs[octets_index])) {
+                    octs[octets_index], const overflow = @mulWithOverflow(octs[octets_index], @as(u8, 10));
+                    if (overflow) {
                         return ParseError.Overflow;
                     }
 
-                    if (@addWithOverflow(u8, octs[octets_index], digit, &octs[octets_index])) {
+                    octs[octets_index], overflow = @addWithOverflow(octs[octets_index], digit);
+                    if (overflow) {
                         return ParseError.Overflow;
                     }
                 },
@@ -204,10 +206,12 @@ pub const IpV4Address = struct {
         self: Self,
         comptime fmt: []const u8,
         options: std.fmt.FormatOptions,
-        context: var,
+        context: anytype,
         comptime Errors: type,
-        output: fn (@typeOf(context), []const u8) Errors!void,
+        output: fn (@TypeOf(context), []const u8) Errors!void,
     ) Errors!void {
+        _ = fmt;
+        _ = options;
         return std.fmt.format(
             context,
             Errors,
@@ -244,14 +248,14 @@ pub const IpV6Address = struct {
     pub fn init(a: u16, b: u16, c: u16, d: u16, e: u16, f: u16, g: u17, h: u16) Self {
         return Self{
             .address = [16]u8{
-                @intCast(u8, a >> 8), @truncate(u8, a),
-                @intCast(u8, b >> 8), @truncate(u8, b),
-                @intCast(u8, c >> 8), @truncate(u8, c),
-                @intCast(u8, d >> 8), @truncate(u8, d),
-                @intCast(u8, e >> 8), @truncate(u8, e),
-                @intCast(u8, f >> 8), @truncate(u8, f),
-                @intCast(u8, g >> 8), @truncate(u8, g),
-                @intCast(u8, h >> 8), @truncate(u8, h),
+                @intCast(a >> 8), @truncate(a),
+                @intCast(b >> 8), @truncate(b),
+                @intCast(c >> 8), @truncate(c),
+                @intCast(d >> 8), @truncate(d),
+                @intCast(e >> 8), @truncate(e),
+                @intCast(f >> 8), @truncate(f),
+                @intCast(g >> 8), @truncate(g),
+                @intCast(h >> 8), @truncate(h),
             },
             .scope_id = null,
         };
@@ -289,7 +293,7 @@ pub const IpV6Address = struct {
         var any_digits: bool = false;
         var octets_index: usize = 0;
 
-        for (buf) |b, i| {
+        for (buf, 0..) |b, i| {
             parsed_to.* = i;
 
             switch (b) {
@@ -317,7 +321,7 @@ pub const IpV6Address = struct {
                 '0'...'9', 'a'...'z', 'A'...'Z' => {
                     any_digits = true;
 
-                    const digit = switch (b) {
+                    const digit: u16 = switch (b) {
                         '0'...'9' => blk: {
                             break :blk b - '0';
                         },
@@ -332,11 +336,13 @@ pub const IpV6Address = struct {
                         },
                     };
 
-                    if (@mulWithOverflow(u16, x, 16, &x)) {
+                    x, const overflow = @mulWithOverflow(x, @as(u16, 16));
+                    if (overflow) {
                         return ParseError.Overflow;
                     }
 
-                    if (@addWithOverflow(u16, x, digit, &x)) {
+                    x, overflow = @addWithOverflow(x, digit);
+                    if (overflow) {
                         return ParseError.Overflow;
                     }
                 },
@@ -476,6 +482,7 @@ pub const IpV6Address = struct {
         }
 
         const anded = self.address[1] & 0x0f;
+        _ = anded;
 
         return switch (self.address[1] & 0x0f) {
             1 => Ipv6MulticastScope.InterfaceLocal,
@@ -542,9 +549,9 @@ pub const IpV6Address = struct {
 
     fn fmtSlice(
         slice: []const u16,
-        context: var,
+        context: anytype,
         comptime Errors: type,
-        output: fn (@typeOf(context), []const u8) Errors!void,
+        output: fn (@TypeOf(context), []const u8) Errors!void,
     ) Errors!void {
         if (slice.len == 0) {
             return;
@@ -561,10 +568,12 @@ pub const IpV6Address = struct {
         self: Self,
         comptime fmt: []const u8,
         options: std.fmt.FormatOptions,
-        context: var,
+        context: anytype,
         comptime Errors: type,
-        output: fn (@typeOf(context), []const u8) Errors!void,
+        output: fn (@TypeOf(context), []const u8) Errors!void,
     ) Errors!void {
+        _ = fmt;
+        _ = options;
         if (mem.allEqual(u8, self.address, 0)) {
             return std.fmt.format(context, Errors, output, "::");
         } else if (mem.allEqual(u8, self.address[0..14], 0) and self.address[15] == 1) {
@@ -582,7 +591,7 @@ pub const IpV6Address = struct {
             var current_group_of_zero_length: usize = 0;
             var current_group_of_zero_at: usize = 0;
 
-            for (segs) |segment, index| {
+            for (segs, 0..) |segment, index| {
                 if (segment == 0) {
                     if (current_group_of_zero_length == 0) {
                         current_group_of_zero_at = index;
@@ -619,9 +628,9 @@ pub const IpV6Address = struct {
         self: Self,
         comptime fmt: []const u8,
         options: std.fmt.FormatOptions,
-        context: var,
+        context: anytype,
         comptime Errors: type,
-        output: fn (@typeOf(context), []const u8) Errors!void,
+        output: fn (@TypeOf(context), []const u8) Errors!void,
     ) Errors!void {
         try self.fmtAddress(fmt, options, context, Errors, output);
 
@@ -750,9 +759,9 @@ pub const IpAddress = union(IpAddressType) {
         self: Self,
         comptime fmt: []const u8,
         options: std.fmt.FormatOptions,
-        context: var,
+        context: anytype,
         comptime Errors: type,
-        output: fn (@typeOf(context), []const u8) Errors!void,
+        output: fn (@TypeOf(context), []const u8) Errors!void,
     ) Errors!void {
         return switch (self) {
             .V4 => |a| a.format(fmt, options, context, Errors, output),

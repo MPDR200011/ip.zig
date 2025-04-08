@@ -1,18 +1,18 @@
-const Builder = @import("std").build.Builder;
+const std = @import("std");
 
-pub fn build(b: *Builder) void {
-    const mode = b.standardReleaseOptions();
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
 
-    const lib = b.addStaticLibrary("ip", "src/main.zig");
-    lib.setBuildMode(mode);
+    const ipMod = b.addModule("ip", .{ .root_source_file = b.path("src/main.zig") });
 
-    var main_tests = b.addTest("test/main.zig");
-    main_tests.setBuildMode(mode);
-    main_tests.addPackagePath("ip", "src/main.zig");
+    {
+        const main_tests = b.addTest(.{ .root_source_file = b.path("test/main.zig"), .optimize = optimize, .target = target });
+        main_tests.root_module.addImport("ip", ipMod);
 
-    const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&main_tests.step);
+        const run_tests_step = b.addRunArtifact(main_tests);
 
-    b.default_step.dependOn(&lib.step);
-    b.installArtifact(lib);
+        const test_step = b.step("test", "Run library tests");
+        test_step.dependOn(&run_tests_step.step);
+    }
 }

@@ -3,7 +3,9 @@ const mem = std.mem;
 const fmt = std.fmt;
 const testing = std.testing;
 
-use @import("ip");
+const ipLib = @import("ip");
+const IpV4Address = ipLib.IpV4Address;
+const ParseError = ipLib.ParseError;
 
 test "IpV4Address.fromSlice()" {
     var array = [_]u8{ 127, 0, 0, 1 };
@@ -13,7 +15,7 @@ test "IpV4Address.fromSlice()" {
 }
 
 test "IpV4Address.fromArray()" {
-    var array = [_]u8{ 127, 0, 0, 1 };
+    const array = [_]u8{ 127, 0, 0, 1 };
     const ip = IpV4Address.fromArray(array);
 
     testing.expect(IpV4Address.Localhost.equals(ip));
@@ -81,7 +83,7 @@ test "IpV4Address.equals()" {
 }
 
 test "IpV4Address.toHostByteOrder()" {
-    var expected: u32 = 0x0d0c0b0a;
+    const expected: u32 = 0x0d0c0b0a;
 
     testing.expectEqual(expected, IpV4Address.init(13, 12, 11, 10).toHostByteOrder());
 }
