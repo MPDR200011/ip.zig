@@ -19,8 +19,8 @@ test "IpAddress.isIpv4()" {
         .V4 = IpV4Address.init(192, 168, 0, 1),
     };
 
-    testing.expect(ip.isIpv4());
-    testing.expect(ip.isIpv6() == false);
+    try testing.expect(ip.isIpv4());
+    try testing.expect(ip.isIpv6() == false);
 }
 
 test "IpAddress.isIpv6()" {
@@ -28,103 +28,103 @@ test "IpAddress.isIpv6()" {
         .V6 = IpV6Address.init(0, 0, 0, 0, 0, 0xffff, 0xc00a, 0x2ff),
     };
 
-    testing.expect(ip.isIpv6());
-    testing.expect(ip.isIpv4() == false);
+    try testing.expect(ip.isIpv6());
+    try testing.expect(ip.isIpv4() == false);
 }
 
 test "IpAddress.isUnspecified()" {
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V4 = IpV4Address.init(0, 0, 0, 0),
     }).isUnspecified());
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V4 = IpV4Address.init(192, 168, 0, 1),
     }).isUnspecified() == false);
 
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0, 0, 0, 0, 0, 0, 0, 0),
     }).isUnspecified());
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0, 0, 0, 0, 0, 0xffff, 0xc00a, 0x2ff),
     }).isUnspecified() == false);
 }
 
 test "IpAddress.isLoopback()" {
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V4 = IpV4Address.init(127, 0, 0, 1),
     }).isLoopback());
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V4 = IpV4Address.init(192, 168, 0, 1),
     }).isLoopback() == false);
 
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0, 0, 0, 0, 0, 0, 0, 0x1),
     }).isLoopback());
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0, 0, 0, 0, 0, 0xffff, 0xc00a, 0x2ff),
     }).isLoopback() == false);
 }
 
 test "IpAddress.isMulticast()" {
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V4 = IpV4Address.init(236, 168, 10, 65),
     }).isMulticast());
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V4 = IpV4Address.init(172, 16, 10, 65),
     }).isMulticast() == false);
 
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0xff00, 0, 0, 0, 0, 0, 0, 0),
     }).isMulticast());
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0, 0, 0, 0, 0, 0xffff, 0xc00a, 0x2ff),
     }).isMulticast() == false);
 }
 
 test "IpAddress.isDocumentation()" {
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V4 = IpV4Address.init(203, 0, 113, 6),
     }).isDocumentation());
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V4 = IpV4Address.init(193, 34, 17, 19),
     }).isDocumentation() == false);
 
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0),
     }).isDocumentation());
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0, 0, 0, 0, 0, 0xffff, 0xc00a, 0x2ff),
     }).isDocumentation() == false);
 }
 
 test "IpAddress.isGloballyRoutable()" {
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V4 = IpV4Address.init(10, 254, 0, 0),
     }).isGloballyRoutable() == false);
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V4 = IpV4Address.init(80, 9, 12, 3),
     }).isGloballyRoutable());
 
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0, 0, 0, 0, 0, 0xffff, 0xc00a, 0x2ff),
     }).isGloballyRoutable());
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0, 0, 0x1c9, 0, 0, 0xafc8, 0, 0x1),
     }).isGloballyRoutable());
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0, 0, 0, 0, 0, 0, 0, 0x1),
     }).isGloballyRoutable() == false);
 }
 
 test "IpAddress.equals()" {
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V4 = IpV4Address.init(127, 0, 0, 1),
     }).equals(IpAddress{ .V4 = IpV4Address.Localhost }));
 
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0, 0, 0, 0, 0, 0, 0, 1),
     }).equals(IpAddress{ .V6 = IpV6Address.Localhost }));
 
-    testing.expect((IpAddress{
+    try testing.expect((IpAddress{
         .V6 = IpV6Address.init(0, 0, 0, 0, 0, 0, 0, 1),
     }).equals(IpAddress{ .V4 = IpV4Address.init(127, 0, 0, 1) }) == false);
 }
@@ -133,9 +133,9 @@ fn testFormatIpAddress(address: IpAddress, expected: []const u8) !void {
     var buffer: [1024]u8 = undefined;
     const buf = buffer[0..];
 
-    const result = try fmt.bufPrint(buf, "{}", address);
+    const result = try fmt.bufPrint(buf, "{}", .{address});
 
-    testing.expectEqualSlices(u8, result, expected);
+    try testing.expectEqualSlices(u8, result, expected);
 }
 
 test "IpAddress.format()" {
@@ -147,19 +147,19 @@ test "IpAddress.format()" {
     }, "2001:db8:85a3:8d3:1319:8a2e:370:7348");
 }
 
-fn testIpParseError(addr: []const u8, expected_error: ParseError) void {
-    testing.expectError(expected_error, IpAddress.parse(addr));
+fn testIpParseError(addr: []const u8, expected_error: ParseError) !void {
+    try testing.expectError(expected_error, IpAddress.parse(addr));
 }
 
 test "IpAddress.parse()" {
     const parsed = try IpAddress.parse("127.0.0.1");
-    testing.expect(parsed.equals(IpAddress{
+    try testing.expect(parsed.equals(IpAddress{
         .V4 = IpV4Address.Localhost,
     }));
 
-    testIpParseError("256.0.0.1", ParseError.Overflow);
-    testIpParseError("x.0.0.1", ParseError.InvalidCharacter);
-    testIpParseError("127.0.0.1.1", ParseError.TooManyOctets);
-    testIpParseError("127.0.0.", ParseError.Incomplete);
-    testIpParseError("100..0.1", ParseError.InvalidCharacter);
+    try testIpParseError("256.0.0.1", ParseError.Overflow);
+    try testIpParseError("x.0.0.1", ParseError.InvalidCharacter);
+    try testIpParseError("127.0.0.1.1", ParseError.TooManyOctets);
+    try testIpParseError("127.0.0.", ParseError.Incomplete);
+    try testIpParseError("100..0.1", ParseError.InvalidCharacter);
 }

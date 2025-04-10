@@ -54,7 +54,7 @@ pub const IpV4Address = struct {
     /// Create an IP Address from a host byte order u32.
     pub fn fromHostByteOrder(ip: u32) Self {
         var address: [4]u8 = undefined;
-        mem.writeInt(u32, &address, ip, builtin.Endian.Big);
+        mem.writeInt(u32, &address, ip, .big);
 
         return Self.fromArray(address);
     }
@@ -83,15 +83,15 @@ pub const IpV4Address = struct {
                 '0'...'9' => {
                     any_digits = true;
 
-                    const digit: u16 = b - '0';
+                    const digit: u8 = b - '0';
 
-                    octs[octets_index], const overflow = @mulWithOverflow(octs[octets_index], @as(u8, 10));
-                    if (overflow) {
+                    octs[octets_index], var overflow = @mulWithOverflow(octs[octets_index], @as(u8, 10));
+                    if (overflow == 1) {
                         return ParseError.Overflow;
                     }
 
                     octs[octets_index], overflow = @addWithOverflow(octs[octets_index], digit);
-                    if (overflow) {
+                    if (overflow == 1) {
                         return ParseError.Overflow;
                     }
                 },
@@ -115,7 +115,7 @@ pub const IpV4Address = struct {
 
     /// Returns whether an IP Address is an unspecified address as specified in _UNIX Network Programming, Second Edition_.
     pub fn isUnspecified(self: Self) bool {
-        return mem.allEqual(u8, self.address, 0);
+        return mem.allEqual(u8, &self.address, 0);
     }
 
     /// Returns whether an IP Address is a loopback address as defined by [IETF RFC 1122](https://tools.ietf.org/html/rfc1122).
@@ -151,7 +151,7 @@ pub const IpV4Address = struct {
 
     /// Returns whether an IP Address is a broadcast address as defined by [IETF RFC 919](https://tools.ietf.org/html/rfc919).
     pub fn isBroadcast(self: Self) bool {
-        return mem.allEqual(u8, self.address, 255);
+        return mem.allEqual(u8, &self.address, 255);
     }
 
     /// Returns whether an IP Adress is a documentation address as defined by [IETF RFC 5737](https://tools.ietf.org/html/rfc5737).
@@ -191,12 +191,12 @@ pub const IpV4Address = struct {
 
     /// Returns whether an IP Address is equal to another.
     pub fn equals(self: Self, other: Self) bool {
-        return mem.eql(u8, self.address, other.address);
+        return mem.eql(u8, &self.address, &other.address);
     }
 
     /// Returns the IP Address as a host byte order u32.
     pub fn toHostByteOrder(self: Self) u32 {
-        return mem.readVarInt(u32, self.address, builtin.Endian.Big);
+        return mem.readVarInt(u32, &self.address, .big);
     }
 
     /// Formats the IP Address using the given format string and context.
@@ -206,22 +206,16 @@ pub const IpV4Address = struct {
         self: Self,
         comptime fmt: []const u8,
         options: std.fmt.FormatOptions,
-        context: anytype,
-        comptime Errors: type,
-        output: fn (@TypeOf(context), []const u8) Errors!void,
-    ) Errors!void {
+        writer: anytype,
+    ) !void {
         _ = fmt;
         _ = options;
-        return std.fmt.format(
-            context,
-            Errors,
-            output,
-            "{}.{}.{}.{}",
+        return try std.fmt.format(writer, "{}.{}.{}.{}", .{
             self.address[0],
             self.address[1],
             self.address[2],
             self.address[3],
-        );
+        });
     }
 };
 
@@ -242,7 +236,7 @@ pub const IpV6Address = struct {
     pub const Unspecified = Self.init(0, 0, 0, 0, 0, 0, 0, 0);
 
     address: [16]u8,
-    scope_id: ?[]u8,
+    zone_id: ?[]const u8,
 
     /// Create an IP Address with the given 16 bit segments.
     pub fn init(a: u16, b: u16, c: u16, d: u16, e: u16, f: u16, g: u17, h: u16) Self {
@@ -257,7 +251,7 @@ pub const IpV6Address = struct {
                 @intCast(g >> 8), @truncate(g),
                 @intCast(h >> 8), @truncate(h),
             },
-            .scope_id = null,
+            .zone_id = null,
         };
     }
 
@@ -267,21 +261,21 @@ pub const IpV6Address = struct {
     pub fn fromSlice(address: []u8) Self {
         debug.assert(address.len == 16);
 
-        return Self.init(mem.readVarInt(u16, address[0..2], builtin.Endian.Big), mem.readVarInt(u16, address[2..4], builtin.Endian.Big), mem.readVarInt(u16, address[4..6], builtin.Endian.Big), mem.readVarInt(u16, address[6..8], builtin.Endian.Big), mem.readVarInt(u16, address[8..10], builtin.Endian.Big), mem.readVarInt(u16, address[10..12], builtin.Endian.Big), mem.readVarInt(u16, address[12..14], builtin.Endian.Big), mem.readVarInt(u16, address[14..16], builtin.Endian.Big));
+        return Self.init(mem.readVarInt(u16, address[0..2], .big), mem.readVarInt(u16, address[2..4], .big), mem.readVarInt(u16, address[4..6], .big), mem.readVarInt(u16, address[6..8], .big), mem.readVarInt(u16, address[8..10], .big), mem.readVarInt(u16, address[10..12], .big), mem.readVarInt(u16, address[12..14], .big), mem.readVarInt(u16, address[14..16], .big));
     }
 
     /// Create an IP Address from an array of bytes.
     pub fn fromArray(address: [16]u8) Self {
         return Self{
             .address = address,
-            .scope_id = null,
+            .zone_id = null,
         };
     }
 
     /// Create an IP Address from a host byte order u128.
     pub fn fromHostByteOrder(ip: u128) Self {
         var address: [16]u8 = undefined;
-        mem.writeInt(u128, &address, ip, builtin.Endian.Big);
+        mem.writeInt(u128, &address, ip, .big);
 
         return Self.fromArray(address);
     }
@@ -302,6 +296,7 @@ pub const IpV6Address = struct {
                 },
                 ':' => {
                     if (!any_digits and i > 0) {
+                        // Means we ecounter the second ':' in '::'
                         break;
                     }
 
@@ -336,13 +331,13 @@ pub const IpV6Address = struct {
                         },
                     };
 
-                    x, const overflow = @mulWithOverflow(x, @as(u16, 16));
-                    if (overflow) {
+                    x, var overflow = @mulWithOverflow(x, @as(u16, 16));
+                    if (overflow == 1) {
                         return ParseError.Overflow;
                     }
 
                     x, overflow = @addWithOverflow(x, digit);
-                    if (overflow) {
+                    if (overflow == 1) {
                         return ParseError.Overflow;
                     }
                 },
@@ -381,13 +376,13 @@ pub const IpV6Address = struct {
             var octs: [8]u16 = [_]u16{0} ** 8;
 
             if (first_part.len > 0) {
-                std.mem.copy(u16, octs[0..first_part.len], first_part);
+                std.mem.copyForwards(u16, octs[0..first_part.len], first_part);
             }
 
             const end_buf = buf[parsed_to + 1 ..];
             const second_part = try Self.parseAsManyOctetsAsPossible(end_buf, &parsed_to);
 
-            std.mem.copy(u16, octs[8 - second_part.len ..], second_part);
+            std.mem.copyForwards(u16, octs[8 - second_part.len ..], second_part);
 
             parsed = Self.init(octs[0], octs[1], octs[2], octs[3], octs[4], octs[5], octs[6], octs[7]);
         }
@@ -412,20 +407,20 @@ pub const IpV6Address = struct {
 
     /// Returns whether there is a scope ID associated with an IP Address.
     pub fn hasScopeId(self: Self) bool {
-        return self.scope_id != null;
+        return self.zone_id != null;
     }
 
     /// Returns the segments of an IP Address as an array of 16 bit integers.
     pub fn segments(self: Self) [8]u16 {
         return [8]u16{
-            mem.readVarInt(u16, self.address[0..2], builtin.Endian.Big),
-            mem.readVarInt(u16, self.address[2..4], builtin.Endian.Big),
-            mem.readVarInt(u16, self.address[4..6], builtin.Endian.Big),
-            mem.readVarInt(u16, self.address[6..8], builtin.Endian.Big),
-            mem.readVarInt(u16, self.address[8..10], builtin.Endian.Big),
-            mem.readVarInt(u16, self.address[10..12], builtin.Endian.Big),
-            mem.readVarInt(u16, self.address[12..14], builtin.Endian.Big),
-            mem.readVarInt(u16, self.address[14..16], builtin.Endian.Big),
+            mem.readVarInt(u16, self.address[0..2], .big),
+            mem.readVarInt(u16, self.address[2..4], .big),
+            mem.readVarInt(u16, self.address[4..6], .big),
+            mem.readVarInt(u16, self.address[6..8], .big),
+            mem.readVarInt(u16, self.address[8..10], .big),
+            mem.readVarInt(u16, self.address[10..12], .big),
+            mem.readVarInt(u16, self.address[12..14], .big),
+            mem.readVarInt(u16, self.address[14..16], .big),
         };
     }
 
@@ -436,7 +431,7 @@ pub const IpV6Address = struct {
 
     /// Returns whether an IP Address is an unspecified address as specified in [IETF RFC 4291](https://tools.ietf.org/html/rfc4291).
     pub fn isUnspecified(self: Self) bool {
-        return mem.allEqual(u8, self.address, 0);
+        return mem.allEqual(u8, &self.address, 0);
     }
 
     /// Returns whether an IP Address is a loopback address as defined by [IETF RFC 4291](https://tools.ietf.org/html/rfc4291).
@@ -539,28 +534,26 @@ pub const IpV6Address = struct {
 
     /// Returns whether an IP Address is equal to another.
     pub fn equals(self: Self, other: Self) bool {
-        return mem.eql(u8, self.address, other.address);
+        return mem.eql(u8, &self.address, &other.address);
     }
 
     /// Returns the IP Address as a host byte order u128.
     pub fn toHostByteOrder(self: Self) u128 {
-        return mem.readVarInt(u128, self.address, builtin.Endian.Big);
+        return mem.readVarInt(u128, &self.address, .big);
     }
 
     fn fmtSlice(
         slice: []const u16,
-        context: anytype,
-        comptime Errors: type,
-        output: fn (@TypeOf(context), []const u8) Errors!void,
-    ) Errors!void {
+        writer: anytype,
+    ) !void {
         if (slice.len == 0) {
             return;
         }
 
-        try std.fmt.format(context, Errors, output, "{x}", slice[0]);
+        try std.fmt.format(writer, "{x}", .{slice[0]});
 
         for (slice[1..]) |segment| {
-            try std.fmt.format(context, Errors, output, ":{x}", segment);
+            try std.fmt.format(writer, ":{x}", .{segment});
         }
     }
 
@@ -568,20 +561,18 @@ pub const IpV6Address = struct {
         self: Self,
         comptime fmt: []const u8,
         options: std.fmt.FormatOptions,
-        context: anytype,
-        comptime Errors: type,
-        output: fn (@TypeOf(context), []const u8) Errors!void,
-    ) Errors!void {
+        writer: anytype,
+    ) !void {
         _ = fmt;
         _ = options;
-        if (mem.allEqual(u8, self.address, 0)) {
-            return std.fmt.format(context, Errors, output, "::");
+        if (mem.allEqual(u8, &self.address, 0)) {
+            return std.fmt.format(writer, "::", .{});
         } else if (mem.allEqual(u8, self.address[0..14], 0) and self.address[15] == 1) {
-            return std.fmt.format(context, Errors, output, "::1");
+            return std.fmt.format(writer, "::1", .{});
         } else if (self.isIpv4Compatible()) {
-            return std.fmt.format(context, Errors, output, "::{}.{}.{}.{}", self.address[12], self.address[13], self.address[14], self.address[15]);
+            return std.fmt.format(writer, "::{}.{}.{}.{}", .{ self.address[12], self.address[13], self.address[14], self.address[15] });
         } else if (self.isIpv4Mapped()) {
-            return std.fmt.format(context, Errors, output, "::ffff:{}.{}.{}.{}", self.address[12], self.address[13], self.address[14], self.address[15]);
+            return std.fmt.format(writer, "::ffff:{}.{}.{}.{}", .{ self.address[12], self.address[13], self.address[14], self.address[15] });
         } else {
             const segs = self.segments();
 
@@ -610,13 +601,13 @@ pub const IpV6Address = struct {
             }
 
             if (longest_group_of_zero_length > 0) {
-                try IpV6Address.fmtSlice(segs[0..longest_group_of_zero_at], context, Errors, output);
+                try IpV6Address.fmtSlice(segs[0..longest_group_of_zero_at], writer);
 
-                try std.fmt.format(context, Errors, output, "::");
+                try std.fmt.format(writer, "::", .{});
 
-                try IpV6Address.fmtSlice(segs[longest_group_of_zero_at + longest_group_of_zero_length ..], context, Errors, output);
+                try IpV6Address.fmtSlice(segs[longest_group_of_zero_at + longest_group_of_zero_length ..], writer);
             } else {
-                return std.fmt.format(context, Errors, output, "{x}:{x}:{x}:{x}:{x}:{x}:{x}:{x}", segs[0], segs[1], segs[2], segs[3], segs[4], segs[5], segs[6], segs[7]);
+                return std.fmt.format(writer, "{x}:{x}:{x}:{x}:{x}:{x}:{x}:{x}", .{ segs[0], segs[1], segs[2], segs[3], segs[4], segs[5], segs[6], segs[7] });
             }
         }
     }
@@ -628,14 +619,12 @@ pub const IpV6Address = struct {
         self: Self,
         comptime fmt: []const u8,
         options: std.fmt.FormatOptions,
-        context: anytype,
-        comptime Errors: type,
-        output: fn (@TypeOf(context), []const u8) Errors!void,
-    ) Errors!void {
-        try self.fmtAddress(fmt, options, context, Errors, output);
+        writer: anytype,
+    ) !void {
+        try self.fmtAddress(fmt, options, writer);
 
-        if (self.scope_id) |scope| {
-            return std.fmt.format(context, Errors, output, "%{}", scope);
+        if (self.zone_id) |scope| {
+            return std.fmt.format(writer, "%{s}", .{scope});
         }
     }
 };
@@ -759,13 +748,11 @@ pub const IpAddress = union(IpAddressType) {
         self: Self,
         comptime fmt: []const u8,
         options: std.fmt.FormatOptions,
-        context: anytype,
-        comptime Errors: type,
-        output: fn (@TypeOf(context), []const u8) Errors!void,
-    ) Errors!void {
+        writer: anytype,
+    ) !void {
         return switch (self) {
-            .V4 => |a| a.format(fmt, options, context, Errors, output),
-            .V6 => |a| a.format(fmt, options, context, Errors, output),
+            .V4 => |a| a.format(fmt, options, writer),
+            .V6 => |a| a.format(fmt, options, writer),
         };
     }
 };
