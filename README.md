@@ -1,6 +1,14 @@
-# ip.zig [![CircleCI](https://circleci.com/gh/euantorano/ip.zig.svg?style=svg)](https://circleci.com/gh/euantorano/ip.zig)
+# ip.zig
 
 A Zig library for working with IP Addresses
+
+Forked from: [https://github.com/euantorano/ip.zig](https://github.com/euantorano/ip.zig)
+
+## Installation
+
+```
+zig fetch --save https://github.com/MPDR200011/ip.zig/archive/master.tar.gz
+```
 
 ## Current Status
 
