@@ -159,8 +159,8 @@ fn testIpV6ParseAndBack(addr: []const u8, expectedIp: IpV6Address) !void {
 test "IpV6Address.parse()" {
     try testIpV6ParseAndBack("::", IpV6Address.Unspecified);
     try testIpV6ParseAndBack("::1", IpV6Address.Localhost);
+    try testIpV6ParseAndBack("2001:db8:85a3:8df:1319:8A2F:370:7348", IpV6Address.init(0x2001, 0xdb8, 0x85a3, 0x8df, 0x1319, 0x8a2f, 0x370, 0x7348));
     try testIpV6ParseAndBack("2001:db8:85a3:8d3:0:0:0:7348", IpV6Address.init(0x2001, 0xdb8, 0x85a3, 0x8d3, 0x0000, 0x0000, 0x0000, 0x7348));
-    try testIpV6ParseAndBack("2001:db8:85a3:8d3:1319:8a2e:370:7348", IpV6Address.init(0x2001, 0xdb8, 0x85a3, 0x8d3, 0x1319, 0x8a2e, 0x370, 0x7348));
     try testIpV6ParseAndBack("2001:db8:85a3::8a2e:370:7334", IpV6Address.init(0x2001, 0x0db8, 0x85a3, 0x0000, 0x0000, 0x8a2e, 0x0370, 0x7334));
     try testIpV6ParseAndBack("2001:db8:85a3::", IpV6Address.init(0x2001, 0x0db8, 0x85a3, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000));
     try testIpV6ParseAndBack("::8a2e:370:7334", IpV6Address.init(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8a2e, 0x0370, 0x7334));

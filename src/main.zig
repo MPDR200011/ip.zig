@@ -316,7 +316,7 @@ pub const IpV6Address = struct {
 
                     any_digits = false;
                 },
-                '0'...'9', 'a'...'z', 'A'...'Z' => {
+                '0'...'9', 'a'...'f', 'A'...'F' => {
                     any_digits = true;
 
                     const digit: u16 = switch (b) {
@@ -329,9 +329,7 @@ pub const IpV6Address = struct {
                         'A'...'F' => blk: {
                             break :blk b - 'A' + 10;
                         },
-                        else => {
-                            return ParseError.InvalidCharacter;
-                        },
+                        else => unreachable,
                     };
 
                     x, var overflow = @mulWithOverflow(x, @as(u16, 16));
