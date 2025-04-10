@@ -148,7 +148,10 @@ test "IpV6Address.format()" {
 
 fn testIpV6ParseAndBack(addr: []const u8, expectedIp: IpV6Address) !void {
     const parsed = try IpV6Address.parse(addr);
-    try testFormatIpv6Address(parsed, addr);
+
+    // This line should only be used as a debug helper,
+    // the formatted string is not guaranteed to be equal to the input string
+    // try testFormatIpv6Address(parsed, addr);
 
     try testing.expect(parsed.equals(expectedIp));
 }
@@ -156,8 +159,17 @@ fn testIpV6ParseAndBack(addr: []const u8, expectedIp: IpV6Address) !void {
 test "IpV6Address.parse()" {
     try testIpV6ParseAndBack("::", IpV6Address.Unspecified);
     try testIpV6ParseAndBack("::1", IpV6Address.Localhost);
-    try testIpV6ParseAndBack("2001:db8:85a3::8a2e:370:7334", IpV6Address.init(0x2001, 0x0db8, 0x85a3, 0x0000, 0x0000, 0x8a2e, 0x0370, 0x7334));
+    try testIpV6ParseAndBack("2001:db8:85a3:8d3:0:0:0:7348", IpV6Address.init(0x2001, 0xdb8, 0x85a3, 0x8d3, 0x0000, 0x0000, 0x0000, 0x7348));
     try testIpV6ParseAndBack("2001:db8:85a3:8d3:1319:8a2e:370:7348", IpV6Address.init(0x2001, 0xdb8, 0x85a3, 0x8d3, 0x1319, 0x8a2e, 0x370, 0x7348));
+    try testIpV6ParseAndBack("2001:db8:85a3::8a2e:370:7334", IpV6Address.init(0x2001, 0x0db8, 0x85a3, 0x0000, 0x0000, 0x8a2e, 0x0370, 0x7334));
+    try testIpV6ParseAndBack("2001:db8:85a3::", IpV6Address.init(0x2001, 0x0db8, 0x85a3, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000));
+    try testIpV6ParseAndBack("::8a2e:370:7334", IpV6Address.init(0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8a2e, 0x0370, 0x7334));
+    try testIpV6ParseAndBack("2001:db8:85a3:8d3:1319:8a2e:370:7348%eth3", IpV6Address.init(0x2001, 0xdb8, 0x85a3, 0x8d3, 0x1319, 0x8a2e, 0x370, 0x7348));
+    try testIpV6ParseAndBack("2001:db8:85a3::%eth3", IpV6Address.init(0x2001, 0x0db8, 0x85a3, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000));
 
+    try testing.expectError(ParseError.InvalidFormat, IpV6Address.parse("2001:db8:85a3:8d3::7348::1234"));
     try testing.expectError(ParseError.TooManyOctets, IpV6Address.parse("2001:db8:85a3:8d3:1319:8a2e:370:7348:123"));
+    try testing.expectError(ParseError.Incomplete, IpV6Address.parse("2001:db8:85a3:8d3:1319:8a2e"));
+    try testing.expectError(ParseError.InvalidCharacter, IpV6Address.parse("2001:db8:85a3:8d3:1319:8a2e:370:7348-eth3"));
+    try testing.expectError(ParseError.InvalidCharacter, IpV6Address.parse("2001:db8:85a3:8d3:1319::-eth3"));
 }

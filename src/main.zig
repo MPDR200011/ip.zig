@@ -11,6 +11,7 @@ pub const ParseError = error{
     Overflow,
     Incomplete,
     UnknownAddressType,
+    InvalidFormat,
 };
 
 /// An IPv4 address.
@@ -280,15 +281,16 @@ pub const IpV6Address = struct {
         return Self.fromArray(address);
     }
 
-    fn parseAsManyOctetsAsPossible(buf: []const u8, parsed_to: *usize) ParseError![]u16 {
-        var octs: [8]u16 = [_]u16{0} ** 8;
-
+    fn parseAsManyOctetsAsPossible(octs: *[8]u16, buf: []const u8) ParseError!struct { []u16, bool, usize } {
         var x: u16 = 0;
         var any_digits: bool = false;
         var octets_index: usize = 0;
 
+        var double_colon = false;
+
+        var read_bytes: usize = 0;
         for (buf, 0..) |b, i| {
-            parsed_to.* = i;
+            read_bytes += 1;
 
             switch (b) {
                 '%' => {
@@ -297,6 +299,7 @@ pub const IpV6Address = struct {
                 ':' => {
                     if (!any_digits and i > 0) {
                         // Means we ecounter the second ':' in '::'
+                        double_colon = true;
                         break;
                     }
 
@@ -347,58 +350,66 @@ pub const IpV6Address = struct {
             }
         }
 
+        if (octets_index > 7) {
+            return ParseError.TooManyOctets;
+        }
+
         if (any_digits) {
             octs[octets_index] = x;
             octets_index += 1;
         }
 
-        return octs[0..octets_index];
+        return .{ octs[0..octets_index], double_colon, read_bytes };
     }
 
     /// Parse an IP Address from a string representation.
     pub fn parse(buf: []const u8) ParseError!Self {
-        var parsed_to: usize = 0;
+        var total_parsed: usize = 0;
         var parsed: Self = undefined;
 
-        const first_part = try Self.parseAsManyOctetsAsPossible(buf, &parsed_to);
+        var parsedOcts: [8]u16 = [_]u16{0} ** 8;
+        const first_part, var double_colon, var read_bytes = try Self.parseAsManyOctetsAsPossible(&parsedOcts, buf);
+        total_parsed += read_bytes;
 
         if (first_part.len == 8) {
             // got all octets, meaning there is no empty section within the string
             parsed = Self.init(first_part[0], first_part[1], first_part[2], first_part[3], first_part[4], first_part[5], first_part[6], first_part[7]);
         } else {
             // not all octets parsed, there must be more to parse
-            if (parsed_to >= buf.len) {
-                // ran out of buffer without getting full packet
+
+            if (!double_colon) {
+                // The only valid situation where not all octets are parse is when we hit a "::"
                 return ParseError.Incomplete;
             }
 
             // create new array by combining first and second part
-            var octs: [8]u16 = [_]u16{0} ** 8;
+            var finalOcts: [8]u16 = [_]u16{0} ** 8;
 
             if (first_part.len > 0) {
-                std.mem.copyForwards(u16, octs[0..first_part.len], first_part);
+                std.mem.copyForwards(u16, finalOcts[0..first_part.len], first_part);
             }
 
-            const end_buf = buf[parsed_to + 1 ..];
-            const second_part = try Self.parseAsManyOctetsAsPossible(end_buf, &parsed_to);
+            if (total_parsed < buf.len) {
+                const end_buf = buf[total_parsed..];
+                const second_part, double_colon, read_bytes = try Self.parseAsManyOctetsAsPossible(&parsedOcts, end_buf);
+                if (double_colon) {
+                    // Second half should not have a "::"
+                    return ParseError.InvalidFormat;
+                }
+                total_parsed += read_bytes;
 
-            std.mem.copyForwards(u16, octs[8 - second_part.len ..], second_part);
+                std.mem.copyForwards(u16, finalOcts[8 - second_part.len ..], second_part);
+            }
 
-            parsed = Self.init(octs[0], octs[1], octs[2], octs[3], octs[4], octs[5], octs[6], octs[7]);
+            parsed = Self.init(finalOcts[0], finalOcts[1], finalOcts[2], finalOcts[3], finalOcts[4], finalOcts[5], finalOcts[6], finalOcts[7]);
         }
 
-        if (parsed_to < buf.len - 1) {
-            // check for a trailing scope id
-            if (buf[parsed_to + 1] == '%') {
-                // rest of buf is assumed to be scope id
-                parsed_to += 1;
-
-                if (parsed_to >= buf.len) {
-                    // not enough data left in buffer for scope id
-                    return ParseError.Incomplete;
-                }
-
-                // TODO: parsed.scope_id = buf[parsed_to..];
+        if (total_parsed < buf.len) {
+            // check for a trailing zone id
+            if (buf[total_parsed - 1] == '%') {
+                // TODO: parsed.zone_id = buf[parsed_to..];
+            } else {
+                return ParseError.InvalidFormat;
             }
         }
 
