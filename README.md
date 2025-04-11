@@ -7,7 +7,7 @@ Forked from: [https://github.com/euantorano/ip.zig](https://github.com/euantoran
 ## Installation
 
 ```
-zig fetch --save https://github.com/MPDR200011/ip.zig/archive/master.tar.gz
+zig fetch --save https://github.com/MPDR200011/ip.zig#latest-stable
 ```
 
 ## Current Status
