@@ -152,9 +152,14 @@ fn testIpParseError(addr: []const u8, expected_error: ParseError) !void {
 }
 
 test "IpAddress.parse()" {
-    const parsed = try IpAddress.parse("127.0.0.1");
-    try testing.expect(parsed.equals(IpAddress{
+    const parsedV4 = try IpAddress.parse("127.0.0.1");
+    try testing.expect(parsedV4.equals(IpAddress{
         .V4 = IpV4Address.Localhost,
+    }));
+
+    const parsedV6 = try IpAddress.parse("::1");
+    try testing.expect(parsedV6.equals(IpAddress{
+        .V6 = IpV6Address.Localhost,
     }));
 
     try testIpParseError("256.0.0.1", ParseError.Overflow);
@@ -162,4 +167,13 @@ test "IpAddress.parse()" {
     try testIpParseError("127.0.0.1.1", ParseError.TooManyOctets);
     try testIpParseError("127.0.0.", ParseError.Incomplete);
     try testIpParseError("100..0.1", ParseError.InvalidCharacter);
+}
+
+test "IpAddress.toStdAddress()" {
+    const v4 = try IpAddress.parse("127.0.0.1");
+
+    const expectedV4 = std.net.Address.initIp4(.{ 127, 0, 0, 1 }, 42);
+    const actualV4 = v4.toStdAddress(42);
+
+    try testing.expect(expectedV4.eql(actualV4));
 }

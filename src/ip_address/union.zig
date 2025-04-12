@@ -133,4 +133,11 @@ pub const IpAddress = union(IpAddressType) {
             .V6 => |a| a.format(fmt, options, writer),
         };
     }
+
+    pub fn toStdAddress(self: Self, port: u16) std.net.Address {
+        switch (self) {
+            .V4 => |v4| {return v4.toStdAddress(port);},
+            .V6 => |v6| {return v6.toStdAddress(port);},
+        }
+    }
 };

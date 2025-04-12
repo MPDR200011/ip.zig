@@ -423,3 +423,8 @@ pub fn format(
         return std.fmt.format(writer, "%{s}", .{scope});
     }
 }
+
+pub fn toStdAddress(self: Self, port: u16) std.net.Address {
+    // FIXME How to get scope id?
+    return std.net.Address.initIp6(self.address, port, 0,0);
+}

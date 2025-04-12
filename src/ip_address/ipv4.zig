@@ -209,3 +209,7 @@ pub fn format(
         self.address[3],
     });
 }
+
+pub fn toStdAddress(self: Self, port: u16) std.net.Address {
+    return std.net.Address.initIp4(self.address, port);
+}
