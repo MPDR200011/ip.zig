@@ -6,8 +6,8 @@ const testing = std.testing;
 const ipLib = @import("ip");
 const IpV4Address = ipLib.IpV4Address;
 const IpV6Address = ipLib.IpV6Address;
-const Ipv6MulticastScope = ipLib.Ipv6MulticastScope;
-const ParseError = ipLib.ParseError;
+const Ipv6MulticastScope = IpV6Address.Ipv6MulticastScope;
+const ParseError = ipLib.utils.ParseError;
 
 test "IpV6Address.segments()" {
     try testing.expectEqual([8]u16{ 0, 0, 0, 0, 0, 0xffff, 0xc00a, 0x2ff }, IpV6Address.init(0, 0, 0, 0, 0, 0xffff, 0xc00a, 0x2ff).segments());
