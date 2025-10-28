@@ -4,10 +4,10 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const ipMod = b.addModule("ip", .{ .root_source_file = b.path("src/main.zig") });
+    const ipMod = b.addModule("ip", .{ .root_source_file = b.path("src/main.zig"), .optimize = optimize, .target = target });
 
     {
-        const main_tests = b.addTest(.{ .root_source_file = b.path("test/main.zig"), .optimize = optimize, .target = target });
+        const main_tests = b.addTest(.{ .root_module = ipMod });
         main_tests.root_module.addImport("ip", ipMod);
 
         const run_tests_step = b.addRunArtifact(main_tests);
