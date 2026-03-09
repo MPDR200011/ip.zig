@@ -340,35 +340,31 @@ pub fn toHostByteOrder(self: Self) u128 {
 
 fn fmtSlice(
     slice: []const u16,
-    writer: anytype,
+    writer: *std.io.Writer,
 ) !void {
     if (slice.len == 0) {
         return;
     }
 
-    try std.fmt.format(writer, "{x}", .{slice[0]});
+    try writer.print("{x}", .{slice[0]});
 
     for (slice[1..]) |segment| {
-        try std.fmt.format(writer, ":{x}", .{segment});
+        try writer.print(":{x}", .{segment});
     }
 }
 
 fn fmtAddress(
     self: Self,
-    comptime fmt: []const u8,
-    options: std.fmt.FormatOptions,
-    writer: anytype,
+    writer: *std.io.Writer,
 ) !void {
-    _ = fmt;
-    _ = options;
     if (mem.allEqual(u8, &self.address, 0)) {
-        return std.fmt.format(writer, "::", .{});
+        try writer.print("::", .{});
     } else if (mem.allEqual(u8, self.address[0..14], 0) and self.address[15] == 1) {
-        return std.fmt.format(writer, "::1", .{});
+        try writer.print("::1", .{});
     } else if (self.isIpv4Compatible()) {
-        return std.fmt.format(writer, "::{}.{}.{}.{}", .{ self.address[12], self.address[13], self.address[14], self.address[15] });
+        return writer.print("::{}.{}.{}.{}", .{ self.address[12], self.address[13], self.address[14], self.address[15] });
     } else if (self.isIpv4Mapped()) {
-        return std.fmt.format(writer, "::ffff:{}.{}.{}.{}", .{ self.address[12], self.address[13], self.address[14], self.address[15] });
+        return writer.print("::ffff:{}.{}.{}.{}", .{ self.address[12], self.address[13], self.address[14], self.address[15] });
     } else {
         const segs = self.segments();
 
@@ -399,11 +395,11 @@ fn fmtAddress(
         if (longest_group_of_zero_length > 0) {
             try Self.fmtSlice(segs[0..longest_group_of_zero_at], writer);
 
-            try std.fmt.format(writer, "::", .{});
+            try writer.print("::", .{});
 
             try Self.fmtSlice(segs[longest_group_of_zero_at + longest_group_of_zero_length ..], writer);
         } else {
-            return std.fmt.format(writer, "{x}:{x}:{x}:{x}:{x}:{x}:{x}:{x}", .{ segs[0], segs[1], segs[2], segs[3], segs[4], segs[5], segs[6], segs[7] });
+            return writer.print("{x}:{x}:{x}:{x}:{x}:{x}:{x}:{x}", .{ segs[0], segs[1], segs[2], segs[3], segs[4], segs[5], segs[6], segs[7] });
         }
     }
 }
@@ -413,14 +409,12 @@ fn fmtAddress(
 /// This is used by the `std.fmt` module to format an IP Address within a format string.
 pub fn format(
     self: Self,
-    comptime fmt: []const u8,
-    options: std.fmt.FormatOptions,
-    writer: anytype,
+    writer: *std.io.Writer,
 ) !void {
-    try self.fmtAddress(fmt, options, writer);
+    try self.fmtAddress(writer);
 
     if (self.zone_id) |scope| {
-        return std.fmt.format(writer, "%{s}", .{scope});
+        return writer.print("%{s}", .{scope});
     }
 }
 

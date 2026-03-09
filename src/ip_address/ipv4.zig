@@ -196,13 +196,9 @@ pub fn toHostByteOrder(self: Self) u32 {
 /// This is used by the `std.fmt` module to format an IP Address within a format string.
 pub fn format(
     self: Self,
-    comptime fmt: []const u8,
-    options: std.fmt.FormatOptions,
-    writer: anytype,
+    writer: *std.io.Writer,
 ) !void {
-    _ = fmt;
-    _ = options;
-    return try std.fmt.format(writer, "{}.{}.{}.{}", .{
+    try writer.print("{d}.{d}.{d}.{d}", .{
         self.address[0],
         self.address[1],
         self.address[2],

@@ -98,7 +98,7 @@ test "IpV4Address.format()" {
 
     const addr = IpV4Address.init(13, 12, 11, 10);
 
-    const result = try fmt.bufPrint(buf, "{}", .{addr});
+    const result = try fmt.bufPrint(buf, "{f}", .{addr});
 
     const expected: []const u8 = "13.12.11.10";
 
@@ -113,7 +113,7 @@ fn testIpV4Format(addr: IpV4Address, expected: []const u8) !void {
     var buffer: [15]u8 = undefined;
     const buf = buffer[0..];
 
-    const result = try fmt.bufPrint(buf, "{}", .{addr});
+    const result = try fmt.bufPrint(buf, "{f}", .{addr});
 
     try testing.expectEqualSlices(u8, expected, result);
 }

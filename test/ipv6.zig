@@ -124,7 +124,7 @@ fn testFormatIpv6Address(address: IpV6Address, expected: []const u8) !void {
     var buffer: [1024]u8 = undefined;
     const buf = buffer[0..];
 
-    const result = try fmt.bufPrint(buf, "{}", .{address});
+    const result = try fmt.bufPrint(buf, "{f}", .{address});
 
     try testing.expectEqualSlices(u8, expected, result);
 }

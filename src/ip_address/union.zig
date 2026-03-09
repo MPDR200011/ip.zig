@@ -124,13 +124,11 @@ pub const IpAddress = union(IpAddressType) {
     /// This is used by the `std.fmt` module to format an IP Address within a format string.
     pub fn format(
         self: Self,
-        comptime fmt: []const u8,
-        options: std.fmt.FormatOptions,
-        writer: anytype,
+        writer: *std.io.Writer,
     ) !void {
         return switch (self) {
-            .V4 => |a| a.format(fmt, options, writer),
-            .V6 => |a| a.format(fmt, options, writer),
+            .V4 => |a| a.format(writer),
+            .V6 => |a| a.format(writer),
         };
     }
 
